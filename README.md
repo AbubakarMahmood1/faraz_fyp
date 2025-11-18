@@ -40,12 +40,13 @@ The platform enables users to create profiles, connect with others, share activi
 
 ### Key Highlights
 
-- 🔐 **Secure Authentication** - JWT-based auth with password reset via email
-- 👥 **Social Networking** - Follow/unfollow, activity feeds, user search
-- 💬 **Real-time Messaging** - Direct messaging with read receipts
-- 🔍 **Advanced Search** - Find users by expertise, role, skills
-- 📊 **Activity Feed** - Personalized feed from followed users
-- 🎨 **Modern UI** - Responsive design with TailwindCSS
+- 🔐 **Secure Authentication** - JWT + OAuth (Google/GitHub), email verification, password reset
+- 👥 **Social Networking** - Follow/unfollow, activity feeds, advanced user search
+- 💬 **Real-time Messaging** - WebSocket-powered chat with typing indicators & read receipts
+- 🔍 **Advanced Search** - Multi-filter search by expertise, skills, location, experience
+- 📊 **Analytics Dashboard** - Personal insights, engagement metrics, activity trends
+- 👨‍💼 **Admin Panel** - User management, platform statistics, system health monitoring
+- 🎨 **Modern UI** - Responsive design with TailwindCSS and shadcn/ui
 - ✅ **Comprehensive Testing** - 86 tests (54 backend + 32 frontend)
 - 🚀 **Production Ready** - Rate limiting, error handling, security headers
 
@@ -55,10 +56,13 @@ The platform enables users to create profiles, connect with others, share activi
 
 ### Authentication & Authorization
 - ✅ User signup with email validation
+- ✅ Email verification with secure tokens (24-hour expiry)
 - ✅ Secure login with JWT tokens
-- ✅ Password reset via email with secure tokens
-- ✅ Role-based access control (Innovator/Expert/Investor)
-- ✅ Session management
+- ✅ Social login via Google & GitHub OAuth (NextAuth.js)
+- ✅ Password reset via email with secure tokens (10-minute expiry)
+- ✅ Role-based access control (User/Admin/Superadmin)
+- ✅ User types (Innovator/Expert/Investor/Explorer)
+- ✅ Session management with auto-refresh
 
 ### Profile Management
 - ✅ Complete profile with role-specific fields
@@ -69,16 +73,43 @@ The platform enables users to create profiles, connect with others, share activi
 - ✅ Location information
 - ✅ Profile editing
 
-### Social Features (Phase 5)
-- ✅ **User Search** - Search by name, expertise, role
-- ✅ **Personalized Suggestions** - Discover relevant users
+### Social Features
+- ✅ **Advanced User Search** - Multi-filter search (name, expertise, skills, experience, location)
+- ✅ **Filter Options API** - Dynamic filter options for all user attributes
+- ✅ **Personalized Suggestions** - Discover relevant users based on your profile
 - ✅ **Follow/Unfollow System** - Build your network
-- ✅ **Followers & Following Lists** - See connections
-- ✅ **Activity Feed** - Stay updated with network activities
-- ✅ **Direct Messaging** - Send and receive messages
-- ✅ **Conversation Threads** - Organized chat history
-- ✅ **Unread Messages** - Track unread count
-- ✅ **Read Receipts** - Message read status
+- ✅ **Followers & Following Lists** - View connections with counts
+- ✅ **Connection Status** - Check follow relationship status
+- ✅ **Activity Feed** - Personalized feed from followed users
+- ✅ **Real-time Messaging** - WebSocket-powered instant messaging
+- ✅ **Typing Indicators** - See when someone is typing
+- ✅ **Read Receipts** - Single/double check marks for message status
+- ✅ **Online Status** - Real-time user presence tracking
+- ✅ **Conversation Management** - Organized chat threads with search
+- ✅ **Message Notifications** - In-app notifications for new messages
+- ✅ **Unread Count Tracking** - Badge counts on conversations
+
+### Admin Panel
+- ✅ **Platform Statistics** - Total users, activities, connections, messages
+- ✅ **User Management** - View, search, filter all users with pagination
+- ✅ **User Details** - Comprehensive user info with stats
+- ✅ **Status Management** - Activate/deactivate user accounts
+- ✅ **Role Management** - Update user roles (superadmin only)
+- ✅ **User Deletion** - Delete users with cascade deletion (superadmin only)
+- ✅ **System Health** - Server uptime, memory, CPU, database monitoring
+- ✅ **Analytics Charts** - Signup trends, user distribution by role/provider
+- ✅ **Time Range Filtering** - View stats for 7/30/90/365 days
+
+### Analytics Dashboard
+- ✅ **Personal Analytics** - Followers, following, messages, activities overview
+- ✅ **Profile Completeness Score** - Visual progress indicator with recommendations
+- ✅ **Engagement Metrics** - Response rate, unique conversations, avg daily activity
+- ✅ **Activity Trends** - Daily activity chart (last 7 days)
+- ✅ **Message Trends** - Sent/received message chart (last 7 days)
+- ✅ **Connection Growth** - Follower growth chart (last 30 days)
+- ✅ **Activity Breakdown** - Pie chart by activity type
+- ✅ **Behavioral Insights** - Most active day, most active hour
+- ✅ **Activity Timeline** - Recent activity feed with details
 
 ### Security & Performance
 - ✅ Rate limiting (5 auth attempts, 100 API requests per 15 min)
@@ -89,6 +120,8 @@ The platform enables users to create profiles, connect with others, share activi
 - ✅ Database indexes for performance
 - ✅ Response compression
 - ✅ Centralized error handling
+- ✅ Socket.io authentication middleware
+- ✅ JWT verification for WebSocket connections
 
 ---
 
@@ -99,6 +132,7 @@ The platform enables users to create profiles, connect with others, share activi
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JSON Web Tokens (JWT)
+- **Real-time**: Socket.io (WebSocket)
 - **Email**: Nodemailer (SMTP)
 - **Validation**: Joi
 - **Security**: Helmet, express-rate-limit, bcrypt, crypto
@@ -107,8 +141,11 @@ The platform enables users to create profiles, connect with others, share activi
 ### Frontend
 - **Framework**: Next.js 14.2.17 (App Router)
 - **Language**: TypeScript
-- **UI Library**: TailwindCSS + rizzui
-- **State Management**: Redux Toolkit, React Hooks
+- **UI Library**: TailwindCSS + shadcn/ui + rizzui
+- **Authentication**: NextAuth.js (OAuth)
+- **Real-time**: Socket.io-client
+- **Charts**: Recharts
+- **State Management**: Redux Toolkit, React Hooks, Context API
 - **Form Handling**: React Hook Form + Zod
 - **HTTP Client**: Axios
 - **Notifications**: react-hot-toast
@@ -127,25 +164,33 @@ The platform enables users to create profiles, connect with others, share activi
 
 ```
 Innovation Platform
-├── Backend (Express.js REST API)
-│   ├── Authentication & Authorization
+├── Backend (Express.js REST API + WebSocket)
+│   ├── Authentication & Authorization (JWT + OAuth)
+│   ├── Email Verification Service
 │   ├── Profile Management
-│   ├── Social Features (Search, Connections, Feed, Messages)
+│   ├── Social Features (Search, Connections, Feed)
+│   ├── Real-time Messaging (Socket.io)
+│   ├── Admin Panel (User Management, Stats, System Health)
+│   ├── Analytics Engine (Personal Insights, Engagement Metrics)
 │   ├── Rate Limiting & Security
-│   └── Email Service
+│   └── Email Service (Nodemailer)
 │
-├── Frontend (Next.js)
-│   ├── Authentication Pages
+├── Frontend (Next.js + TypeScript)
+│   ├── Authentication (Login, Signup, OAuth, Email Verification)
 │   ├── Profile Pages (Dashboard, Edit, Settings)
 │   ├── Password Reset Flow
-│   └── Responsive UI Components
+│   ├── User Search & Discovery
+│   ├── Real-time Messaging Interface
+│   ├── Admin Dashboard (User Management, Platform Stats)
+│   ├── Analytics Dashboard (Charts, Metrics, Timeline)
+│   └── Responsive UI Components (shadcn/ui)
 │
 └── Database (MongoDB)
-    ├── Users Collection
-    ├── Profiles Collection
-    ├── Connections Collection
-    ├── Activities Collection
-    └── Messages Collection
+    ├── Users Collection (Auth, OAuth, Roles)
+    ├── Profiles Collection (Details, Skills, Projects)
+    ├── Connections Collection (Follow/Unfollow)
+    ├── Activities Collection (Activity Feed)
+    └── Messages Collection (Chat History)
 ```
 
 ---
@@ -227,7 +272,20 @@ Innovation Platform
 
 2. Configure:
    ```env
+   # API
    NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:3001/api
+
+   # NextAuth (OAuth)
+   NEXTAUTH_URL=http://localhost:3000
+   NEXTAUTH_SECRET=generate_with_openssl_rand_base64_32
+
+   # Google OAuth
+   GOOGLE_CLIENT_ID=your_google_client_id
+   GOOGLE_CLIENT_SECRET=your_google_client_secret
+
+   # GitHub OAuth
+   GITHUB_CLIENT_ID=your_github_client_id
+   GITHUB_CLIENT_SECRET=your_github_client_secret
 
    # Firebase (for image uploads)
    NEXT_PUBLIC_FIREBASE_API_KEY=your_firebase_api_key
@@ -235,6 +293,10 @@ Innovation Platform
    NEXT_PUBLIC_FIREBASE_PROJECT_ID=your_project_id
    NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
    ```
+
+**OAuth Setup**:
+- **Google**: Create OAuth credentials at [Google Cloud Console](https://console.cloud.google.com/)
+- **GitHub**: Create OAuth app at [GitHub Settings](https://github.com/settings/developers)
 
 ### Running the Application
 
@@ -280,10 +342,19 @@ http://localhost:3001/api
 |--------|----------|-------------|---------------|
 | POST | `/signup` | Create new account | No |
 | POST | `/login` | Login user | No |
+| POST | `/social-login` | OAuth login (Google/GitHub) | No |
 | POST | `/password/forgot` | Request password reset | No |
 | POST | `/password/reset/:token` | Reset password | No |
 | POST | `/logout` | Logout user | Yes |
 | PATCH | `/users/update-password` | Update password | Yes |
+
+### Email Verification
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| POST | `/auth/send-verification` | Send verification email | Yes |
+| POST | `/auth/verify-email/:token` | Verify email with token | No |
+| POST | `/auth/resend-verification` | Resend verification email | Yes |
 
 ### Profile Endpoints
 
@@ -325,6 +396,50 @@ http://localhost:3001/api
 | GET | `/messages/conversations` | Get all conversations | Yes |
 | GET | `/messages/unread/count` | Get unread count | Yes |
 | PATCH | `/messages/:messageId/read` | Mark as read | Yes |
+
+### Admin Endpoints
+
+| Method | Endpoint | Description | Auth Required | Role Required |
+|--------|----------|-------------|---------------|---------------|
+| GET | `/admin/stats` | Platform statistics | Yes | Admin/Superadmin |
+| GET | `/admin/system-health` | System health metrics | Yes | Admin/Superadmin |
+| GET | `/admin/users` | Get all users (paginated) | Yes | Admin/Superadmin |
+| GET | `/admin/users/:userId` | Get user details | Yes | Admin/Superadmin |
+| PATCH | `/admin/users/:userId/status` | Update user status | Yes | Admin/Superadmin |
+| PATCH | `/admin/users/:userId/role` | Update user role | Yes | Superadmin |
+| DELETE | `/admin/users/:userId` | Delete user | Yes | Superadmin |
+
+### Analytics Endpoints
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| GET | `/analytics/personal` | Personal analytics | Yes |
+| GET | `/analytics/engagement` | Engagement metrics | Yes |
+| GET | `/analytics/timeline` | Activity timeline | Yes |
+
+### WebSocket Events
+
+**Connection**: `ws://localhost:3001` (Socket.io)
+
+**Events Emitted** (Client → Server):
+- `join_conversation` - Join chat room
+- `leave_conversation` - Leave chat room
+- `send_message` - Send message
+- `mark_read` - Mark message as read
+- `typing_start` - Start typing indicator
+- `typing_stop` - Stop typing indicator
+- `get_online_users` - Request online users list
+- `get_unread_count` - Request unread count
+
+**Events Received** (Server → Client):
+- `message_sent` - Message sent confirmation
+- `new_message` - New message received
+- `message_read` - Message marked as read
+- `message_notification` - New message notification
+- `user_typing` - Typing indicator
+- `user_status` - User online/offline status
+- `online_users` - List of online users
+- `unread_count` - Unread message count
 
 ### Request Examples
 
@@ -452,38 +567,71 @@ For detailed deployment instructions, see [PRODUCTION_DEPLOYMENT.md](PRODUCTION_
 faraz_fyp/
 ├── backend/
 │   ├── controllers/           # Request handlers
-│   │   ├── auth-controller.js
-│   │   ├── profile.controller.js
-│   │   ├── search.controller.js
-│   │   ├── connection.controller.js
-│   │   ├── activity.controller.js
-│   │   └── message.controller.js
+│   │   ├── auth-controller.js       # Auth, OAuth, Email Verification
+│   │   ├── profile.controller.js    # Profile CRUD
+│   │   ├── search.controller.js     # Advanced Search
+│   │   ├── connection.controller.js # Follow/Unfollow
+│   │   ├── activity.controller.js   # Activity Feed
+│   │   ├── message.controller.js    # Messaging REST API
+│   │   ├── admin.controller.js      # Admin Panel
+│   │   └── analytics.controller.js  # Analytics
 │   ├── models/               # Database schemas
-│   │   ├── user.model.js
-│   │   ├── profile.model.js
-│   │   ├── connection.model.js
-│   │   ├── activity.model.js
-│   │   └── message.model.js
+│   │   ├── user.model.js            # Users, OAuth, Roles
+│   │   ├── profile.model.js         # User Profiles
+│   │   ├── connection.model.js      # Connections
+│   │   ├── activity.model.js        # Activities
+│   │   └── message.model.js         # Messages
 │   ├── routes/               # API routes
-│   ├── middleware/           # Auth, validation, rate limiting
-│   ├── utils/                # Email, validators, error messages
+│   │   ├── profile.routes.js
+│   │   ├── user.routes.js
+│   │   ├── verification.routes.js   # Email Verification
+│   │   ├── search.routes.js
+│   │   ├── connection.routes.js
+│   │   ├── activity.routes.js
+│   │   ├── message.routes.js
+│   │   ├── admin.routes.js          # Admin Routes
+│   │   └── analytics.routes.js      # Analytics Routes
+│   ├── middleware/           # Middleware
+│   │   ├── auth.middleware.js       # JWT Auth
+│   │   ├── admin.middleware.js      # Admin Auth
+│   │   ├── socket.middleware.js     # Socket.io Auth
+│   │   ├── validation.middleware.js
+│   │   ├── rateLimiter.middleware.js
+│   │   └── error.middleware.js
+│   ├── socket/               # WebSocket handlers
+│   │   └── messageHandlers.js       # Real-time messaging
+│   ├── utils/                # Utilities
+│   │   ├── email.js                 # Email Service
+│   │   ├── validators.js
+│   │   └── errorMessages.js
 │   ├── __tests__/            # Test files
 │   ├── .env                  # Environment variables
-│   ├── index.js              # Server entry point
+│   ├── index.js              # Server entry (Express + Socket.io)
 │   └── package.json
 │
 ├── frontend/
 │   ├── app/                  # Next.js pages (App Router)
-│   │   ├── signin/
-│   │   ├── signup/
-│   │   ├── dashboard/
-│   │   ├── profile/edit/
-│   │   ├── settings/
-│   │   ├── forgot-password/
-│   │   └── reset-password/[token]/
-│   ├── api/                  # API controllers
+│   │   ├── api/auth/[...nextauth]/  # NextAuth OAuth
+│   │   ├── signin/                  # Login + OAuth
+│   │   ├── signup/                  # Signup
+│   │   ├── verify-email/            # Email Verification
+│   │   ├── dashboard/               # User Dashboard
+│   │   ├── profile/edit/            # Edit Profile
+│   │   ├── settings/                # Settings
+│   │   ├── forgot-password/         # Forgot Password
+│   │   ├── reset-password/[token]/  # Reset Password
+│   │   ├── search/                  # Advanced Search
+│   │   ├── messages/                # Real-time Messaging
+│   │   ├── analytics/               # Analytics Dashboard
+│   │   └── admin/                   # Admin Panel
+│   │       └── users/               # User Management
+│   ├── contexts/             # React Context
+│   │   ├── AuthContext.tsx
+│   │   └── SocketContext.tsx        # Socket.io Context
+│   ├── lib/socket/           # WebSocket client
+│   │   └── socketService.ts         # Socket.io Service
+│   ├── components/           # UI components (shadcn/ui)
 │   ├── hooks/                # React hooks
-│   ├── components/           # Reusable UI components
 │   ├── data/                 # Constants and configs
 │   ├── __tests__/            # Test files
 │   ├── .env.local            # Environment variables
@@ -559,33 +707,53 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📊 Project Stats
 
-- **Total Lines of Code**: ~8,000+
-- **API Endpoints**: 23
-- **Database Models**: 6
+- **Total Lines of Code**: ~12,000+
+- **API Endpoints**: 35+ (REST) + 8 (WebSocket Events)
+- **Database Models**: 5
+- **Controllers**: 8
+- **Routes**: 9
+- **Middleware**: 6
 - **Tests**: 86 (54 backend + 32 frontend)
 - **Test Coverage**: 90%+
-- **Development Time**: ~103 hours
-- **Commits**: 15+
+- **Development Time**: ~125 hours
+- **Commits**: 20+
+- **Features**:
+  - ✅ Authentication (Local + OAuth)
+  - ✅ Email Verification
+  - ✅ Profile Management
+  - ✅ Advanced Search
+  - ✅ Social Networking
+  - ✅ Real-time Messaging (WebSocket)
+  - ✅ Admin Panel
+  - ✅ Analytics Dashboard
 
 ---
 
 ## 🐛 Known Issues
 
-- Real-time messaging uses REST API (WebSocket integration planned)
 - File uploads limited to images (document upload coming soon)
+- OAuth callback URLs must be configured in Google/GitHub developer console
 
 ---
 
 ## 🗺 Roadmap
 
-- [ ] WebSocket integration for real-time messaging
-- [ ] Push notifications
-- [ ] Email verification on signup
-- [ ] Social login (Google, GitHub)
-- [ ] Advanced search filters
-- [ ] Admin dashboard
+### ✅ Completed
+- [x] Email verification on signup
+- [x] Social login (Google, GitHub OAuth)
+- [x] Advanced search filters
+- [x] Admin dashboard
+- [x] WebSocket integration for real-time messaging
+- [x] Analytics dashboard
+
+### 🔜 Future Enhancements
+- [ ] Push notifications (Web Push API)
+- [ ] Document & file uploads
+- [ ] Video call integration (WebRTC)
 - [ ] Mobile app (React Native)
-- [ ] Analytics dashboard
+- [ ] Advanced analytics (ML-based insights)
+- [ ] Content moderation
+- [ ] Multi-language support (i18n)
 
 ---
 

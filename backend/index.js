@@ -21,6 +21,7 @@ const connectionRoutes = require("./routes/connection.routes");
 const activityRoutes = require("./routes/activity.routes");
 const messageRoutes = require("./routes/message.routes");
 const adminRoutes = require("./routes/admin.routes");
+const analyticsRoutes = require("./routes/analytics.routes");
 require("dotenv").config({ path: "./.env" });
 
 //database connection
@@ -107,6 +108,9 @@ app.use("/api/messages", apiLimiter, messageRoutes);
 
 // Admin routes (require admin/superadmin role)
 app.use("/api/admin", apiLimiter, adminRoutes);
+
+// Analytics routes (require authentication)
+app.use("/api/analytics", apiLimiter, analyticsRoutes);
 
 // Legacy route (deprecated - use /api/users/:username instead)
 app.get("/api/get-user", userControllers.getUser);
