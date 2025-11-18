@@ -90,3 +90,67 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+// Logout
+exports.logout = (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Logged out successfully',
+  });
+};
+
+// Update password
+exports.updatePassword = async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('+password');
+
+    // Check current password
+    const isCorrect = await user.correctPassword(req.body.currentPassword, user.password);
+    if (!isCorrect) {
+      return res.status(401).json({
+        status: 'fail',
+        message: 'Current password is incorrect',
+      });
+    }
+
+    // Update password (will be hashed by pre-save middleware)
+    user.password = req.body.newPassword;
+    await user.save();
+
+    res.status(200).json({
+      status: 'success',
+      message: 'Password updated successfully',
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err.message,
+    });
+  }
+};
+
+// Forgot password (basic version, no email for now)
+exports.forgotPassword = async (req, res) => {
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'fail',
+        message: 'No user found with that email',
+      });
+    }
+
+    // TODO: Generate reset token and send email
+    // For now, just respond with success
+    res.status(200).json({
+      status: 'success',
+      message: 'Password reset email sent (not implemented yet)',
+    });
+  } catch (err) {
+    res.status(400).json({
+      status: 'fail',
+      message: err.message,
+    });
+  }
+};

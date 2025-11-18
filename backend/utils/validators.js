@@ -51,3 +51,40 @@ exports.loginSchema = Joi.object({
       'any.required': 'Password is required',
     }),
 });
+
+// Profile completion validation schema
+exports.completeProfileSchema = Joi.object({
+  // Required for all
+  firstName: Joi.string()
+    .min(2)
+    .required()
+    .messages({
+      'string.min': 'First name must be at least 2 characters long',
+      'any.required': 'First name is required',
+    }),
+  bio: Joi.string()
+    .min(50)
+    .required()
+    .messages({
+      'string.min': 'Bio must be at least 50 characters long',
+      'any.required': 'Bio is required',
+    }),
+
+  // Optional common fields
+  lastName: Joi.string().min(2).optional(),
+  gender: Joi.string().valid('male', 'female', 'other', 'prefer-not').optional(),
+  dateOfBirth: Joi.date().optional(),
+  phoneNo: Joi.string().optional(),
+  country: Joi.string().optional(),
+  city: Joi.string().optional(),
+  profileImage: Joi.string().uri().optional(),
+
+  // Professional fields (for experts and innovators)
+  expertise: Joi.array().items(Joi.string()).optional(),
+  skills: Joi.array().items(Joi.string()).optional(),
+  experienceLevel: Joi.string().optional(),
+
+  // Investor fields
+  organizationName: Joi.string().optional(),
+  investingExperience: Joi.array().items(Joi.string()).optional(),
+});
