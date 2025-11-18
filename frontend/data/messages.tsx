@@ -1,0 +1,15 @@
+export const errorMessages = {
+  emailMessage: "Please enter a valid email address",
+  passwordMessage: "Password must be at least 8 characters long",
+  confirmPasswordMessage: "Password does not match",
+  firstNameMessage: "First name is required",
+  dateOfBirthMessage: "Please enter your date of birth",
+  genderMessage: "Please select your gender",
+  phoneNumberErrorMessage: "Please enter a valid phone number",
+  countryErrorMessage: "Please enter your country",
+  cityErrorMessage: "Please enter your city",
+  expertiesMessage: "Please select your experties",
+  skillsMessage: "Please select your skills",
+  experienceLevelMessage: "Please select your experience level",
+  usernameMessage: "Please enter your username",
+};
