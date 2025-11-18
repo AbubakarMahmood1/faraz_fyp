@@ -5,6 +5,8 @@ Innovation Platform Backend - Final Year Project
 ## Features
 
 - **Authentication**: JWT-based authentication with secure password hashing
+- **Password Reset**: Email-based password reset with secure tokens (10min expiry)
+- **Email Service**: Nodemailer integration for transactional emails
 - **Profile Management**: Complete user profile system with role-based fields
 - **Rate Limiting**: Protection against brute force attacks
 - **Security Headers**: Helmet.js for security best practices
@@ -19,8 +21,9 @@ Innovation Platform Backend - Final Year Project
 - **Framework**: Express.js
 - **Database**: MongoDB with Mongoose ODM
 - **Authentication**: JWT (JSON Web Tokens)
+- **Email**: Nodemailer (SMTP)
 - **Validation**: Joi
-- **Security**: Helmet, express-rate-limit, bcryptjs
+- **Security**: Helmet, express-rate-limit, bcryptjs, crypto
 - **Performance**: Compression middleware
 - **Testing**: Jest, Supertest, MongoDB Memory Server
 
@@ -48,14 +51,32 @@ cp .env.example .env
 
 4. Configure environment variables in `.env`:
 ```env
+# Database
 DATABASE_URL=your_mongodb_connection_string
 DATABASE_PASSWORD=your_database_password
-JWT_SECRET=your_secure_jwt_secret
+
+# JWT
+JWT_SECRET=your_secure_jwt_secret_minimum_32_chars
 JWT_EXPIRES_IN=90d
+
+# Server
 PORT=3001
-FRONTEND_URL=http://localhost:3000
 NODE_ENV=development
+FRONTEND_URL=http://localhost:3000
+
+# Email (Required for password reset)
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USERNAME=your_email@gmail.com
+EMAIL_PASSWORD=your_gmail_app_password
+EMAIL_FROM=your_email@gmail.com
+EMAIL_FROM_NAME=Innovation Platform
 ```
+
+**Email Setup Guide:**
+- For Gmail: Enable 2FA, then create an [App Password](https://myaccount.google.com/apppasswords)
+- For SendGrid: Use API key as password with `apikey` as username
+- For Mailgun: Use SMTP credentials from Mailgun dashboard
 
 ### Running the Server
 
@@ -77,7 +98,8 @@ npm start
 |--------|----------|-------------|------------|
 | POST | `/api/signup` | Create new user account | 5/15min |
 | POST | `/api/login` | Login user | 5/15min |
-| POST | `/api/password/forgot` | Request password reset | 5/15min |
+| POST | `/api/password/forgot` | Send password reset email | 5/15min |
+| POST | `/api/password/reset/:token` | Reset password with token | 5/15min |
 
 ### Authentication (Protected)
 
