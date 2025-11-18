@@ -18,6 +18,11 @@ const messageSchema = new mongoose.Schema(
       trim: true,
       maxlength: [1000, 'Message cannot exceed 1000 characters'],
     },
+    contentType: {
+      type: String,
+      enum: ['text', 'image', 'file', 'link'],
+      default: 'text',
+    },
     read: {
       type: Boolean,
       default: false,

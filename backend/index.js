@@ -1,9 +1,11 @@
 const express = require("express");
+const http = require("http");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
+const { Server } = require("socket.io");
 const authControllers = require("./controllers/auth-controller");
 const userControllers = require("./controllers/user-controller");
 const { validate } = require("./middleware/validation.middleware");
@@ -37,6 +39,18 @@ mongoose
   });
 
 const app = express();
+const server = http.createServer(app);
+
+// Socket.io configuration
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+});
 
 // Security & Performance Middleware
 app.use(helmet()); // Security headers
@@ -103,7 +117,28 @@ app.all('*', notFoundHandler);
 // Global error handling middleware (must be last)
 app.use(globalErrorHandler);
 
-app.listen(process.env.PORT, () => {
+// Socket.io event handling
+const socketAuth = require('./middleware/socket.middleware');
+const messageHandlers = require('./socket/messageHandlers');
+
+io.use(socketAuth);
+
+io.on('connection', (socket) => {
+  console.log(`✓ Socket connected: ${socket.id} (User: ${socket.user?.username})`);
+
+  // Register message handlers
+  messageHandlers(io, socket);
+
+  socket.on('disconnect', () => {
+    console.log(`✗ Socket disconnected: ${socket.id}`);
+  });
+});
+
+// Make io accessible to routes
+app.set('io', io);
+
+server.listen(process.env.PORT, () => {
   console.log("✓ Server is running on port", process.env.PORT);
   console.log("✓ Environment:", process.env.NODE_ENV || 'development');
+  console.log("✓ Socket.io enabled");
 });
