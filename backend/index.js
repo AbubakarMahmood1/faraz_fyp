@@ -13,6 +13,10 @@ const { authLimiter, apiLimiter } = require("./middleware/rateLimiter.middleware
 const { globalErrorHandler, notFoundHandler } = require("./middleware/error.middleware");
 const profileRoutes = require("./routes/profile.routes");
 const userRoutes = require("./routes/user.routes");
+const searchRoutes = require("./routes/search.routes");
+const connectionRoutes = require("./routes/connection.routes");
+const activityRoutes = require("./routes/activity.routes");
+const messageRoutes = require("./routes/message.routes");
 require("dotenv").config({ path: "./.env" });
 
 //database connection
@@ -74,6 +78,12 @@ app.patch("/api/users/update-password", protect, authControllers.updatePassword)
 // Resource routes with general API rate limiting
 app.use("/api/profile", apiLimiter, profileRoutes);
 app.use("/api/users", apiLimiter, userRoutes);
+
+// Phase 5: Social Features (all require authentication - handled in route files)
+app.use("/api/search", apiLimiter, searchRoutes);
+app.use("/api/connections", apiLimiter, connectionRoutes);
+app.use("/api/activities", apiLimiter, activityRoutes);
+app.use("/api/messages", apiLimiter, messageRoutes);
 
 // Legacy route (deprecated - use /api/users/:username instead)
 app.get("/api/get-user", userControllers.getUser);

@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/user.model");
 const { sendPasswordResetEmail, sendWelcomeEmail } = require("../utils/email");
+const errorMessages = require("../utils/errorMessages");
 function getToken(id, registerAs = "") {
   return jwt.sign({ id, registerAs }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -22,7 +23,7 @@ exports.signup = async (req, res) => {
       return res.status(409).json({
         status: "fail",
         data: {
-          message: "Email already exists",
+          message: errorMessages.auth.emailExists,
         },
       });
     }
@@ -32,7 +33,7 @@ exports.signup = async (req, res) => {
       return res.status(409).json({
         status: "fail",
         data: {
-          message: "Username already exists",
+          message: errorMessages.auth.usernameExists,
         },
       });
     }
@@ -66,7 +67,7 @@ exports.login = async (req, res) => {
     if (!email || !password) {
       return res.status(400).json({
         status: "fail",
-        message: "Please provide email and password",
+        message: errorMessages.validation.missingField("Email and Password"),
       });
     }
     //2) check if user exists && password is correct
@@ -74,7 +75,7 @@ exports.login = async (req, res) => {
     if (!user || !(await user.correctPassword(password, user.password))) {
       return res.status(401).json({
         status: "fail",
-        message: "Incorrect email or password",
+        message: errorMessages.auth.invalidCredentials,
       });
     }
     //3) If everything is ok, send token to client

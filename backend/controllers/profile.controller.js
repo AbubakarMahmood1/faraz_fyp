@@ -1,5 +1,6 @@
 const Profile = require('../models/profile.model');
 const User = require('../models/user.model');
+const { createActivity } = require('./activity.controller');
 
 // Complete profile registration
 exports.completeProfile = async (req, res) => {
@@ -22,7 +23,16 @@ exports.completeProfile = async (req, res) => {
     });
 
     // Update user profileCompleted flag
-    await User.findByIdAndUpdate(userId, { profileCompleted: true });
+    const user = await User.findByIdAndUpdate(userId, { profileCompleted: true }, { new: true });
+
+    // Create activity
+    await createActivity(
+      userId,
+      'profile_completed',
+      `${req.body.firstName || user.username} completed their profile`,
+      { profileId: profile._id },
+      'public'
+    );
 
     res.status(200).json({
       status: 'success',

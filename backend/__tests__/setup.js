@@ -5,7 +5,11 @@ let mongoServer;
 
 // Setup: Connect to in-memory database
 beforeAll(async () => {
-  mongoServer = await MongoMemoryServer.create();
+  mongoServer = await MongoMemoryServer.create({
+    binary: {
+      version: '6.0.9', // Use a stable version that exists
+    },
+  });
   const mongoUri = mongoServer.getUri();
   await mongoose.connect(mongoUri);
 });
