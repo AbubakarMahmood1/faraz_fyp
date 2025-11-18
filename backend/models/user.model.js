@@ -45,6 +45,13 @@ const userSchema = new mongoose.Schema({
     sparse: true,
   },
 
+  // Admin role
+  role: {
+    type: String,
+    enum: ['user', 'admin', 'superadmin'],
+    default: 'user',
+  },
+
   // New fields for Phase 2
   profileCompleted: {
     type: Boolean,
@@ -133,6 +140,7 @@ userSchema.index({ emailVerified: 1 });
 userSchema.index({ provider: 1 });
 userSchema.index({ googleId: 1 }, { sparse: true });
 userSchema.index({ githubId: 1 }, { sparse: true });
+userSchema.index({ role: 1 });
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

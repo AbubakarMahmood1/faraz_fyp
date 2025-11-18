@@ -18,6 +18,7 @@ const searchRoutes = require("./routes/search.routes");
 const connectionRoutes = require("./routes/connection.routes");
 const activityRoutes = require("./routes/activity.routes");
 const messageRoutes = require("./routes/message.routes");
+const adminRoutes = require("./routes/admin.routes");
 require("dotenv").config({ path: "./.env" });
 
 //database connection
@@ -89,6 +90,9 @@ app.use("/api/search", apiLimiter, searchRoutes);
 app.use("/api/connections", apiLimiter, connectionRoutes);
 app.use("/api/activities", apiLimiter, activityRoutes);
 app.use("/api/messages", apiLimiter, messageRoutes);
+
+// Admin routes (require admin/superadmin role)
+app.use("/api/admin", apiLimiter, adminRoutes);
 
 // Legacy route (deprecated - use /api/users/:username instead)
 app.get("/api/get-user", userControllers.getUser);
