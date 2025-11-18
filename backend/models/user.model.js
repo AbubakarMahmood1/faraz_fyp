@@ -16,7 +16,10 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, "Password is required"],
+    required: function() {
+      // Password is required only for local authentication
+      return this.provider === 'local' || !this.provider;
+    },
     minlength: 6,
     select: false,
   },
@@ -25,6 +28,21 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ["explorer", "expert", "innovator", "investor"],
     default: "explorer",
+  },
+
+  // OAuth fields
+  provider: {
+    type: String,
+    enum: ['local', 'google', 'github'],
+    default: 'local',
+  },
+  googleId: {
+    type: String,
+    sparse: true, // Allows null values but enforces uniqueness when present
+  },
+  githubId: {
+    type: String,
+    sparse: true,
   },
 
   // New fields for Phase 2
@@ -53,9 +71,10 @@ const userSchema = new mongoose.Schema({
   timestamps: true, // Adds createdAt and updatedAt
 });
 
-// Hash password before saving
+// Hash password before saving (only for local auth)
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  // Skip hashing if password not modified or using OAuth
+  if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
@@ -111,6 +130,9 @@ userSchema.index({ passwordResetExpires: 1 });
 userSchema.index({ emailVerificationToken: 1 });
 userSchema.index({ emailVerificationExpires: 1 });
 userSchema.index({ emailVerified: 1 });
+userSchema.index({ provider: 1 });
+userSchema.index({ googleId: 1 }, { sparse: true });
+userSchema.index({ githubId: 1 }, { sparse: true });
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

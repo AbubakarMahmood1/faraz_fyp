@@ -68,6 +68,7 @@ app.get('/health', (req, res) => {
 // Auth routes (public) - with rate limiting
 app.post("/api/signup", authLimiter, validate(signupSchema), authControllers.signup);
 app.post("/api/login", authLimiter, validate(loginSchema), authControllers.login);
+app.post("/api/social-login", authLimiter, authControllers.socialLogin);
 app.post("/api/password/forgot", authLimiter, authControllers.forgotPassword);
 app.post("/api/password/reset/:token", authLimiter, authControllers.resetPassword);
 app.get("/api/get-hello", authControllers.hello);
