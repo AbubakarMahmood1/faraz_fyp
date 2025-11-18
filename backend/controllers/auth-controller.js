@@ -1,6 +1,6 @@
 const jwtDecode = require("jwt-decode");
 const jwt = require("jsonwebtoken");
-const Signup = require("./../modal/signup-schema");
+const User = require("../models/user.model");
 function getToken(id, registerAs = "") {
   return jwt.sign({ id, registerAs }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN,
@@ -15,29 +15,31 @@ exports.hello = async(req,res)=>{
 exports.signup = async (req, res) => {
   try {
     //first check if same email exist
-    let user = await Signup.findOne({ email: req.body.email });
+    let user = await User.findOne({ email: req.body.email });
     if (user) {
-      return res.status(401).json({
+      return res.status(409).json({
         status: "fail",
         data: {
-          message: "email already exist",
+          message: "Email already exists",
         },
       });
     }
     //then check if same username exist
-    user = await Signup.findOne({ username: req.body.username });
+    user = await User.findOne({ username: req.body.username });
     if (user) {
-      return res.status(402).json({
+      return res.status(409).json({
         status: "fail",
         data: {
-          message: "username already exist",
+          message: "Username already exists",
         },
       });
     }
     // console.log(req.body);
-    const newUser = await Signup.create({
-      ...req.body,
-      registerAs: [req.body.registerAs],
+    const newUser = await User.create({
+      username: req.body.username,
+      email: req.body.email,
+      password: req.body.password,
+      registerAs: req.body.registerAs,
     });
     const token = getToken(newUser._id);
     res.status(201).json({
@@ -66,7 +68,7 @@ exports.login = async (req, res) => {
       });
     }
     //2) check if user exists && password is correct
-    const user = await Signup.findOne({ email }).select("+password");
+    const user = await User.findOne({ email }).select("+password");
     if (!user || !(await user.correctPassword(password, user.password))) {
       return res.status(401).json({
         status: "fail",
@@ -88,7 +90,3 @@ exports.login = async (req, res) => {
     });
   }
 };
-// //route for getting user roles
-// exports.getRole = (req, res) => {
-//   const
-// };

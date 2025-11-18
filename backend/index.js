@@ -3,6 +3,8 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 const authControllers = require("./controllers/auth-controller");
 const userControllers = require("./controllers/user-controller");
+const { validate } = require("./middleware/validation.middleware");
+const { signupSchema, loginSchema } = require("./utils/validators");
 require("dotenv").config({ path: "./.env" });
 
 //database connection
@@ -30,11 +32,12 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.use(express.json());
-//signup request
-app.post("/api/signup", authControllers.signup);
-app.post("/api/login", authControllers.login);
+
+// Routes with validation
+app.post("/api/signup", validate(signupSchema), authControllers.signup);
+app.post("/api/login", validate(loginSchema), authControllers.login);
 app.get("/api/get-user", userControllers.getUser);
-app.get("/api/get-hello",authControllers.hello);
+app.get("/api/get-hello", authControllers.hello);
 
 app.listen(process.env.PORT, () => {
   console.log("server is running on port ", process.env.PORT);
