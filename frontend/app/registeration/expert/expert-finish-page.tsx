@@ -1,48 +1,86 @@
 "use client";
-import { Button, Select, MultiSelect, Loader } from "rizzui";
+import { Button, Select, MultiSelect } from "rizzui";
 import { useState, useRef } from "react";
-import { useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 import Form from "@/components/shared/form/form";
 import TextEditor from "@/components/shared/text-editor";
 import ImagePicker from "@/components/shared/image-picker";
-const experienceOptions = [
-  { label: "Artificial Inteligence", value: "artificial_intelligence" },
-  { label: "Web Development", value: "web_development" },
-  { label: "Mobile Development", value: "mobile_development" },
-];
+import { EXPERTISE_AREAS, EXPERIENCE_LEVELS } from "@/data/constants";
+import { useProfile } from "@/hooks/use-profile";
 
-const experienceLevelOptions = [
-  { label: "1 to 2 years", value: "1_2_years" },
-  { label: "3 to 5 years", value: "2_5_years" },
-  { label: "5+ years", value: "5+_years" },
-];
-export default function ExpertFinishPage() {
-  const [experience, setExperience] = useState([]);
-  const [experienceLevel, setExperienceLevel] = useState(
-    experienceLevelOptions[0]
-  );
-  const isLoading = useSelector((state: any) => state.profile.isImageUploaded);
-  const [bg, setBg] = useState(null);
-  const [content, setContent] = useState("");
-  console.log(content);
+interface ExpertFinishPageProps {
+  registrationData?: any;
+}
+
+export default function ExpertFinishPage({ registrationData }: ExpertFinishPageProps) {
+  const [expertise, setExpertise] = useState([]);
+  const [experienceLevel, setExperienceLevel] = useState(null);
+  const [profileImage, setProfileImage] = useState(null);
+  const [bio, setBio] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
   const editor = useRef(null);
+  const router = useRouter();
+  const { handleCompleteProfile } = useProfile();
+
   function getImageUrl(url: any) {
-    setBg(url);
+    setProfileImage(url);
   }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+
+    // Validation
+    if (!bio || bio.length < 50) {
+      toast.error("Bio must be at least 50 characters long");
+      return;
+    }
+
+    if (!registrationData?.firstName) {
+      toast.error("Please complete previous registration steps first");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const profileData = {
+        ...registrationData,
+        expertise: expertise.map((item: any) => item.value),
+        experienceLevel: experienceLevel?.value,
+        bio,
+        profileImage,
+      };
+
+      const response = await handleCompleteProfile(profileData);
+
+      if (response.status === 200) {
+        toast.success("Profile completed successfully!");
+        router.push("/dashboard");
+      } else {
+        const errorMessage = response.data?.message || "Failed to complete profile";
+        toast.error(errorMessage);
+      }
+    } catch (error: any) {
+      console.error("Profile completion error:", error);
+      toast.error("An error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
   return (
-    <Form style="my-12 w-full">
+    <Form style="my-12 w-full" onSubmit={handleSubmit}>
       <MultiSelect
-        key={Math.random().toString()}
-        label="Your Experties"
-        options={experienceOptions}
-        value={experience}
-        onChange={setExperience}
+        label="Your Expertise"
+        options={EXPERTISE_AREAS}
+        value={expertise}
+        onChange={setExpertise}
       />
       <div data-headlessui-state="open">
         <Select
-          key={Math.random().toString()}
           label="Experience Level"
-          options={experienceLevelOptions}
+          options={EXPERIENCE_LEVELS}
           value={experienceLevel}
           onChange={setExperienceLevel}
           data-headlessui-state="open"
@@ -52,17 +90,16 @@ export default function ExpertFinishPage() {
         <div
           className="w-[100px] h-[100px] border rounded-full flex justify-center flex-col items-center"
           style={{
-            backgroundImage: `url(${bg})`,
+            backgroundImage: `url(${profileImage})`,
             backgroundSize: "cover",
             backgroundPosition: "center",
           }}
         >
-          {isLoading ? <Loader /> : <p className="text-sm">Profile Image</p>}
+          {!profileImage && <span className="text-sm text-gray-500">Upload Photo</span>}
         </div>
       </ImagePicker>
-      <TextEditor content={content} setContent={setContent} />
-      <div dangerouslySetInnerHTML={{ __html: content }} />
-      <Button type="submit" size="xl">
+      <TextEditor content={bio} setContent={setBio} />
+      <Button type="submit" size="xl" isLoading={isLoading} disabled={isLoading}>
         Finish
       </Button>
     </Form>

@@ -11,21 +11,17 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useAuth } from "@/hooks/use-auth";
 import Link from "next/link";
 import { Signup, signup } from "@/validators/zod-schemas";
-const options = [
-  { label: "Explorer", value: "explorer" },
-  { label: "Expert", value: "expert" },
-  { label: "Innovator", value: "innovator" },
-  { label: "Investor", value: "investor" },
-];
+import { USER_ROLES } from "@/data/constants";
+
 export default function SignupForm() {
   //states
   const [duplicateUsername, setDuplicateUsername] = useState(false);
   const [duplicateEmail, setDuplicateEmail] = useState(false);
   const [isLoading, setIsLodaing] = useState(false);
-  const [registerAs, setRegisterAs] = useState(options[0]);
+  const [registerAs, setRegisterAs] = useState(USER_ROLES[0]);
 
   const dispatcher = useDispatch();
-  const { handleSignup } = useAuth();
+  const { handleSignup, setSession } = useAuth();
   const router = useRouter();
   async function submit(data: Signup) {
     const { email, password, username } = data;
@@ -39,17 +35,28 @@ export default function SignupForm() {
 
     console.log(response.status);
     const responseStatus = response.status;
-    if (responseStatus === 401) {
-      setDuplicateUsername(false);
-      setDuplicateEmail(true);
-      setIsLodaing(false);
-    } else if (responseStatus == 402) {
-      setDuplicateEmail(false);
-      setDuplicateUsername(true);
+
+    // Backend now returns 409 (Conflict) for both duplicate email and username
+    // Check response message to determine which field is duplicate
+    if (responseStatus === 409) {
+      const message = response.data?.data?.message?.toLowerCase() || "";
+      if (message.includes("email")) {
+        setDuplicateUsername(false);
+        setDuplicateEmail(true);
+      } else if (message.includes("username")) {
+        setDuplicateEmail(false);
+        setDuplicateUsername(true);
+      }
       setIsLodaing(false);
     } else if (responseStatus === 201) {
       setDuplicateEmail(false);
       setDuplicateUsername(false);
+
+      // Save token to localStorage
+      if (response.data?.token) {
+        setSession(response.data.token);
+      }
+
       dispatcher(userActions.setUser(data?.username));
       if (registerAs.value === "innovator") {
         router.push("/registeration/innovator");
@@ -114,9 +121,8 @@ export default function SignupForm() {
         />
       </div>
       <Select
-        options={options}
+        options={USER_ROLES}
         label="Register as"
-        key={Math.random().toString()}
         value={registerAs}
         onChange={setRegisterAs}
       />
