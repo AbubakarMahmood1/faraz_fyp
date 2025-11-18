@@ -6,6 +6,9 @@ const { protect } = require('../middleware/auth.middleware');
 // All search routes require authentication
 router.use(protect);
 
+// Get filter options for dropdowns
+router.get('/filter-options', searchController.getFilterOptions);
+
 // Search users
 router.get('/users', searchController.searchUsers);
 
