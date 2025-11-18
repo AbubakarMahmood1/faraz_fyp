@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "jest --coverage"
+    "test": "JWT_SECRET=test-secret-key NODE_ENV=test jest --coverage --verbose",
+    "test:watch": "JWT_SECRET=test-secret-key NODE_ENV=test jest --watch",
+    "test:unit": "JWT_SECRET=test-secret-key NODE_ENV=test jest --testPathPattern=__tests__ --coverage"
   },
   "keywords": [
     "innovation",
@@ -34,5 +36,12 @@
     "mongoose": "^8.8.1",
     "morgan": "^1.10.1",
     "nodemon": "^3.1.7"
+  },
+  "devDependencies": {
+    "@types/jest": "^30.0.0",
+    "@types/supertest": "^6.0.3",
+    "jest": "^30.2.0",
+    "mongodb-memory-server": "^10.3.0",
+    "supertest": "^7.1.4"
   }
 }
