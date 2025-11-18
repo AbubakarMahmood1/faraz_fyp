@@ -32,7 +32,6 @@ export default function InvestorFinishPage() {
     <Form style="my-12 w-full">
       <Input label="Enter your organization name" />
       <Select
-        key={Math.random().toString()}
         label="Experience Level"
         options={experienceLevelOptions}
         value={experienceLevel}
@@ -40,7 +39,6 @@ export default function InvestorFinishPage() {
         data-headlessui-state="open"
       />
       <MultiSelect
-        key={Math.random().toString()}
         label="Your Investing Experience"
         options={experienceOptions}
         value={experience}

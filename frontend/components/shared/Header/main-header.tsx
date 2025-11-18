@@ -18,7 +18,7 @@ export default function MainHeader() {
               <Button>Join us</Button>
             </Link>
           ) : (
-            <h1>user account settinhs</h1>
+            <h1>user account settings</h1>
           )}
         </div>
       </div>

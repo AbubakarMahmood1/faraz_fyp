@@ -34,14 +34,12 @@ export default function InnovatorFinishForm() {
   return (
     <Form style="my-12 w-full">
       <MultiSelect
-        key={Math.random().toString()}
         label="Your Experties"
         options={experienceOptions}
         value={experience}
         onChange={setExperience}
       />
       <MultiSelect
-        key={Math.random().toString()}
         label="Skills"
         options={skillsOptions}
         value={skills}
@@ -49,7 +47,6 @@ export default function InnovatorFinishForm() {
       />
       <div data-headlessui-state="open">
         <Select
-          key={Math.random().toString()}
           label="Experience Level"
           options={experienceLevelOptions}
           value={experienceLevel}

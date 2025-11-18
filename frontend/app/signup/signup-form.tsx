@@ -116,7 +116,6 @@ export default function SignupForm() {
       <Select
         options={options}
         label="Register as"
-        key={Math.random().toString()}
         value={registerAs}
         onChange={setRegisterAs}
       />

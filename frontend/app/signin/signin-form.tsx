@@ -21,7 +21,7 @@ export default function SigninForm() {
     if (response.status != 200) {
       toast.error("Invalid email or password");
     } else if (response.status == 200) {
-      if (data.rememverMe) {
+      if (data.rememberMe) {
         setSession(response.data.data.token);
       }
       router.push("/");
@@ -58,7 +58,7 @@ export default function SigninForm() {
         <Checkbox
           label="Remember me"
           size="sm"
-          {...register("rememverMe")}
+          {...register("rememberMe")}
           className="hidden md:block"
         />
         <Link href="/" className="text-blue-500 text-sm underline">

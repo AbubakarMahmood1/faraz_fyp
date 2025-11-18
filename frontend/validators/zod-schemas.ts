@@ -4,7 +4,7 @@ import { errorMessages } from "@/data/messages";
 export const signin = z.object({
   email: z.string().email({ message: errorMessages.emailMessage }),
   password: z.string().min(8, { message: errorMessages.passwordMessage }),
-  rememverMe: z.boolean().optional(),
+  rememberMe: z.boolean().optional(),
 });
 //schema for signup
 export const signup = z
@@ -39,7 +39,7 @@ export const contactInformation = z.object({
   // city: z.string().nonempty({ message: errorMessages.phoneNumberMessage }),
 });
 export const innovatorFinishForm = z.object({
-  experties: z.string().nonempty({ message: errorMessages.expertiesMessage }),
+  expertise: z.string().nonempty({ message: errorMessages.expertiseMessage }),
   skills: z.string().nonempty({ message: errorMessages.skillsMessage }),
   experienceLevel: z
     .string()

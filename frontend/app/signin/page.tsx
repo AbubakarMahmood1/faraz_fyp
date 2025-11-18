@@ -14,7 +14,7 @@ export default function SigninPage() {
           </span>
         </>
       }
-      description="Pleae login to access a world of innovation and opportunities"
+      description="Please login to access a world of innovation and opportunities"
     >
       <SigninForm />
     </Authwrapper>

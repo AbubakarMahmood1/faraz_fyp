@@ -32,7 +32,6 @@ export default function ExpertFinishPage() {
   return (
     <Form style="my-12 w-full">
       <MultiSelect
-        key={Math.random().toString()}
         label="Your Experties"
         options={experienceOptions}
         value={experience}
@@ -40,7 +39,6 @@ export default function ExpertFinishPage() {
       />
       <div data-headlessui-state="open">
         <Select
-          key={Math.random().toString()}
           label="Experience Level"
           options={experienceLevelOptions}
           value={experienceLevel}
