@@ -1,11 +1,16 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
 const authControllers = require("./controllers/auth-controller");
 const userControllers = require("./controllers/user-controller");
 const { validate } = require("./middleware/validation.middleware");
 const { signupSchema, loginSchema } = require("./utils/validators");
 const { protect } = require("./middleware/auth.middleware");
+const { authLimiter, apiLimiter } = require("./middleware/rateLimiter.middleware");
+const { globalErrorHandler, notFoundHandler } = require("./middleware/error.middleware");
 const profileRoutes = require("./routes/profile.routes");
 const userRoutes = require("./routes/user.routes");
 require("dotenv").config({ path: "./.env" });
@@ -27,6 +32,15 @@ mongoose
 
 const app = express();
 
+// Security & Performance Middleware
+app.use(helmet()); // Security headers
+app.use(compression()); // Compress responses
+
+// Request logging (development only)
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
+
 // CORS configuration - restrict to frontend only
 const corsOptions = {
   origin: process.env.FRONTEND_URL || "http://localhost:3000",
@@ -36,23 +50,40 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Auth routes (public)
-app.post("/api/signup", validate(signupSchema), authControllers.signup);
-app.post("/api/login", validate(loginSchema), authControllers.login);
-app.post("/api/password/forgot", authControllers.forgotPassword);
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({
+    status: 'success',
+    message: 'Server is running',
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development',
+  });
+});
+
+// Auth routes (public) - with rate limiting
+app.post("/api/signup", authLimiter, validate(signupSchema), authControllers.signup);
+app.post("/api/login", authLimiter, validate(loginSchema), authControllers.login);
+app.post("/api/password/forgot", authLimiter, authControllers.forgotPassword);
 app.get("/api/get-hello", authControllers.hello);
 
 // Auth routes (protected)
 app.post("/api/logout", protect, authControllers.logout);
 app.patch("/api/users/update-password", protect, authControllers.updatePassword);
 
-// Resource routes
-app.use("/api/profile", profileRoutes);
-app.use("/api/users", userRoutes);
+// Resource routes with general API rate limiting
+app.use("/api/profile", apiLimiter, profileRoutes);
+app.use("/api/users", apiLimiter, userRoutes);
 
 // Legacy route (deprecated - use /api/users/:username instead)
 app.get("/api/get-user", userControllers.getUser);
 
+// 404 handler for undefined routes
+app.all('*', notFoundHandler);
+
+// Global error handling middleware (must be last)
+app.use(globalErrorHandler);
+
 app.listen(process.env.PORT, () => {
-  console.log("server is running on port ", process.env.PORT);
+  console.log("✓ Server is running on port", process.env.PORT);
+  console.log("✓ Environment:", process.env.NODE_ENV || 'development');
 });

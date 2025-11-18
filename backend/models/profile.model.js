@@ -44,4 +44,7 @@ const profileSchema = new mongoose.Schema({
   timestamps: true,
 });
 
+// Index for better query performance
+profileSchema.index({ user: 1 });
+
 module.exports = mongoose.model('Profile', profileSchema);
