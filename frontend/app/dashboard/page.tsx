@@ -5,6 +5,9 @@ import { useProfile } from "@/hooks/use-profile";
 import AuthController from "@/api/AuthController";
 import { Button } from "rizzui";
 import Link from "next/link";
+import axios from "axios";
+import { API_BASE_URL } from "@/api/api.config";
+import toast from "react-hot-toast";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -12,6 +15,8 @@ export default function DashboardPage() {
   const [profile, setProfile] = useState<any>(null);
   const [user, setUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [emailVerified, setEmailVerified] = useState(true); // Default to true to avoid flash
+  const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
     const token = AuthController.getSession();
@@ -26,6 +31,9 @@ export default function DashboardPage() {
         if (response.status === 200) {
           setProfile(response.data.data.profile);
           setUser(response.data.data.user);
+
+          // Check email verification status
+          checkVerificationStatus();
         } else {
           router.push("/signin");
         }
@@ -37,6 +45,51 @@ export default function DashboardPage() {
         setIsLoading(false);
       });
   }, []);
+
+  const checkVerificationStatus = async () => {
+    try {
+      const token = AuthController.getSession();
+      const response = await axios.get(
+        `${API_BASE_URL}/auth/verification-status`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.status === "success") {
+        setEmailVerified(response.data.data.emailVerified);
+      }
+    } catch (error) {
+      console.error("Failed to check verification status:", error);
+    }
+  };
+
+  const handleResendVerification = async () => {
+    try {
+      setIsResending(true);
+      const token = AuthController.getSession();
+
+      const response = await axios.post(
+        `${API_BASE_URL}/auth/resend-verification`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.data.status === "success") {
+        toast.success("Verification email sent! Please check your inbox.");
+      }
+    } catch (error: any) {
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Failed to send verification email");
+      }
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   const onLogout = async () => {
     await handleLogout();
@@ -101,6 +154,46 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Email Verification Banner */}
+        {!emailVerified && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <svg
+                  className="h-6 w-6 text-yellow-400 mr-3"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  />
+                </svg>
+                <div>
+                  <p className="text-sm font-medium text-yellow-800">
+                    Email Not Verified
+                  </p>
+                  <p className="text-sm text-yellow-700">
+                    Please verify your email to unlock all features. Check your inbox for the verification link.
+                  </p>
+                </div>
+              </div>
+              <Button
+                onClick={handleResendVerification}
+                disabled={isResending}
+                size="sm"
+                variant="outline"
+                className="ml-4 border-yellow-400 text-yellow-700 hover:bg-yellow-100"
+              >
+                {isResending ? "Sending..." : "Resend Email"}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">

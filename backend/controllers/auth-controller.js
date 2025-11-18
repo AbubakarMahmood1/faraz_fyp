@@ -2,7 +2,7 @@ const jwtDecode = require("jwt-decode");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/user.model");
-const { sendPasswordResetEmail, sendWelcomeEmail } = require("../utils/email");
+const { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationEmail } = require("../utils/email");
 const errorMessages = require("../utils/errorMessages");
 function getToken(id, registerAs = "") {
   return jwt.sign({ id, registerAs }, process.env.JWT_SECRET, {
@@ -44,6 +44,27 @@ exports.signup = async (req, res) => {
       password: req.body.password,
       registerAs: req.body.registerAs,
     });
+
+    // Generate email verification token
+    const verificationToken = newUser.createEmailVerificationToken();
+    await newUser.save({ validateBeforeSave: false });
+
+    // Send verification email
+    const verificationURL = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    try {
+      await sendVerificationEmail(
+        newUser.email,
+        newUser.username,
+        verificationToken,
+        verificationURL
+      );
+      console.log('Verification email sent to:', newUser.email);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail signup if email fails - user can request resend
+    }
+
     const token = getToken(newUser._id);
     res.status(201).json({
       status: "success",
@@ -258,6 +279,150 @@ exports.resetPassword = async (req, res) => {
     res.status(500).json({
       status: 'error',
       message: 'An error occurred. Please try again later.',
+    });
+  }
+};
+
+// Social login (OAuth) - Google/GitHub
+exports.socialLogin = async (req, res) => {
+  try {
+    const { provider, providerId, email, username, registerAs } = req.body;
+
+    // Validate required fields
+    if (!provider || !providerId || !email) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Provider, providerId, and email are required',
+      });
+    }
+
+    // Validate provider
+    if (!['google', 'github'].includes(provider)) {
+      return res.status(400).json({
+        status: 'fail',
+        message: 'Invalid provider. Must be google or github',
+      });
+    }
+
+    // Build search query based on provider
+    const searchQuery = provider === 'google'
+      ? { googleId: providerId }
+      : { githubId: providerId };
+
+    // Check if user exists with this OAuth ID
+    let user = await User.findOne(searchQuery);
+
+    if (user) {
+      // User exists - return token
+      const token = getToken(user._id, user.registerAs);
+
+      // Update last login
+      user.lastLogin = Date.now();
+      await user.save({ validateBeforeSave: false });
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Login successful',
+        token,
+        data: {
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            registerAs: user.registerAs,
+            profileCompleted: user.profileCompleted,
+            emailVerified: user.emailVerified,
+          },
+        },
+      });
+    }
+
+    // Check if user exists with this email (from previous local signup)
+    user = await User.findOne({ email });
+
+    if (user) {
+      // User exists with email but different provider - link accounts
+      if (provider === 'google') {
+        user.googleId = providerId;
+      } else {
+        user.githubId = providerId;
+      }
+
+      // If they were using local auth, mark email as verified
+      if (user.provider === 'local') {
+        user.emailVerified = true;
+      }
+
+      user.lastLogin = Date.now();
+      await user.save({ validateBeforeSave: false });
+
+      const token = getToken(user._id, user.registerAs);
+
+      return res.status(200).json({
+        status: 'success',
+        message: 'Account linked successfully',
+        token,
+        data: {
+          user: {
+            id: user._id,
+            username: user.username,
+            email: user.email,
+            registerAs: user.registerAs,
+            profileCompleted: user.profileCompleted,
+            emailVerified: user.emailVerified,
+          },
+        },
+      });
+    }
+
+    // User doesn't exist - create new user
+    const newUserData = {
+      email,
+      username: username || email.split('@')[0], // Use email prefix as username if not provided
+      provider,
+      registerAs: registerAs || 'explorer',
+      emailVerified: true, // OAuth emails are pre-verified
+      lastLogin: Date.now(),
+    };
+
+    // Add provider-specific ID
+    if (provider === 'google') {
+      newUserData.googleId = providerId;
+    } else {
+      newUserData.githubId = providerId;
+    }
+
+    // Check if username already exists
+    const existingUsername = await User.findOne({ username: newUserData.username });
+    if (existingUsername) {
+      // Append random suffix to make it unique
+      newUserData.username = `${newUserData.username}${Math.floor(Math.random() * 10000)}`;
+    }
+
+    user = await User.create(newUserData);
+
+    const token = getToken(user._id, user.registerAs);
+
+    res.status(201).json({
+      status: 'success',
+      message: 'Account created successfully',
+      token,
+      data: {
+        user: {
+          id: user._id,
+          username: user.username,
+          email: user.email,
+          registerAs: user.registerAs,
+          profileCompleted: user.profileCompleted,
+          emailVerified: user.emailVerified,
+        },
+      },
+    });
+  } catch (err) {
+    console.error('Social login error:', err);
+    res.status(500).json({
+      status: 'error',
+      message: 'An error occurred during social login',
     });
   }
 };

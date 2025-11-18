@@ -1,9 +1,11 @@
 const express = require("express");
+const http = require("http");
 const mongoose = require("mongoose");
 const cors = require("cors");
 const helmet = require("helmet");
 const compression = require("compression");
 const morgan = require("morgan");
+const { Server } = require("socket.io");
 const authControllers = require("./controllers/auth-controller");
 const userControllers = require("./controllers/user-controller");
 const { validate } = require("./middleware/validation.middleware");
@@ -13,10 +15,13 @@ const { authLimiter, apiLimiter } = require("./middleware/rateLimiter.middleware
 const { globalErrorHandler, notFoundHandler } = require("./middleware/error.middleware");
 const profileRoutes = require("./routes/profile.routes");
 const userRoutes = require("./routes/user.routes");
+const verificationRoutes = require("./routes/verification.routes");
 const searchRoutes = require("./routes/search.routes");
 const connectionRoutes = require("./routes/connection.routes");
 const activityRoutes = require("./routes/activity.routes");
 const messageRoutes = require("./routes/message.routes");
+const adminRoutes = require("./routes/admin.routes");
+const analyticsRoutes = require("./routes/analytics.routes");
 require("dotenv").config({ path: "./.env" });
 
 //database connection
@@ -35,6 +40,18 @@ mongoose
   });
 
 const app = express();
+const server = http.createServer(app);
+
+// Socket.io configuration
+const io = new Server(server, {
+  cors: {
+    origin: process.env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST"],
+  },
+  pingTimeout: 60000,
+  pingInterval: 25000,
+});
 
 // Security & Performance Middleware
 app.use(helmet()); // Security headers
@@ -67,6 +84,7 @@ app.get('/health', (req, res) => {
 // Auth routes (public) - with rate limiting
 app.post("/api/signup", authLimiter, validate(signupSchema), authControllers.signup);
 app.post("/api/login", authLimiter, validate(loginSchema), authControllers.login);
+app.post("/api/social-login", authLimiter, authControllers.socialLogin);
 app.post("/api/password/forgot", authLimiter, authControllers.forgotPassword);
 app.post("/api/password/reset/:token", authLimiter, authControllers.resetPassword);
 app.get("/api/get-hello", authControllers.hello);
@@ -74,6 +92,9 @@ app.get("/api/get-hello", authControllers.hello);
 // Auth routes (protected)
 app.post("/api/logout", protect, authControllers.logout);
 app.patch("/api/users/update-password", protect, authControllers.updatePassword);
+
+// Email verification routes
+app.use("/api/auth", verificationRoutes);
 
 // Resource routes with general API rate limiting
 app.use("/api/profile", apiLimiter, profileRoutes);
@@ -85,6 +106,12 @@ app.use("/api/connections", apiLimiter, connectionRoutes);
 app.use("/api/activities", apiLimiter, activityRoutes);
 app.use("/api/messages", apiLimiter, messageRoutes);
 
+// Admin routes (require admin/superadmin role)
+app.use("/api/admin", apiLimiter, adminRoutes);
+
+// Analytics routes (require authentication)
+app.use("/api/analytics", apiLimiter, analyticsRoutes);
+
 // Legacy route (deprecated - use /api/users/:username instead)
 app.get("/api/get-user", userControllers.getUser);
 
@@ -94,7 +121,28 @@ app.all('*', notFoundHandler);
 // Global error handling middleware (must be last)
 app.use(globalErrorHandler);
 
-app.listen(process.env.PORT, () => {
+// Socket.io event handling
+const socketAuth = require('./middleware/socket.middleware');
+const messageHandlers = require('./socket/messageHandlers');
+
+io.use(socketAuth);
+
+io.on('connection', (socket) => {
+  console.log(`✓ Socket connected: ${socket.id} (User: ${socket.user?.username})`);
+
+  // Register message handlers
+  messageHandlers(io, socket);
+
+  socket.on('disconnect', () => {
+    console.log(`✗ Socket disconnected: ${socket.id}`);
+  });
+});
+
+// Make io accessible to routes
+app.set('io', io);
+
+server.listen(process.env.PORT, () => {
   console.log("✓ Server is running on port", process.env.PORT);
   console.log("✓ Environment:", process.env.NODE_ENV || 'development');
+  console.log("✓ Socket.io enabled");
 });

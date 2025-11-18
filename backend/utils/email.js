@@ -138,3 +138,65 @@ Happy innovating!
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Send email verification email
+ * @param {string} email - Recipient email
+ * @param {string} username - User's username
+ * @param {string} verificationToken - Email verification token
+ * @param {string} verificationURL - Email verification URL
+ */
+exports.sendVerificationEmail = async (email, username, verificationToken, verificationURL) => {
+  try {
+    const transporter = createTransporter();
+
+    const mailOptions = {
+      from: `${process.env.EMAIL_FROM_NAME || 'Innovation Platform'} <${process.env.EMAIL_FROM || process.env.EMAIL_USERNAME}>`,
+      to: email,
+      subject: 'Verify Your Email - Innovation Platform',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2 style="color: #333;">Verify Your Email Address</h2>
+          <p>Hi ${username},</p>
+          <p>Thank you for signing up for Innovation Platform!</p>
+          <p>Please verify your email address to complete your registration and unlock all features.</p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${verificationURL}" style="background-color: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; display: inline-block;">Verify Email</a>
+          </div>
+          <p>Or copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #10B981;">${verificationURL}</p>
+          <p><strong>This link will expire in 24 hours.</strong></p>
+          <p>If you didn't create an account, please ignore this email.</p>
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #ddd;">
+          <p style="color: #666; font-size: 12px;">
+            This is an automated email from Innovation Platform. Please do not reply to this email.
+          </p>
+        </div>
+      `,
+      text: `
+Verify Your Email Address
+
+Hi ${username},
+
+Thank you for signing up for Innovation Platform!
+
+Please verify your email address to complete your registration and unlock all features.
+
+Verify your email by visiting this link:
+${verificationURL}
+
+This link will expire in 24 hours.
+
+If you didn't create an account, please ignore this email.
+      `,
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+
+    console.log('Verification email sent:', info.messageId);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    throw new Error('Failed to send verification email');
+  }
+};

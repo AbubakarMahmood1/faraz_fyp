@@ -16,7 +16,10 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: [true, "Password is required"],
+    required: function() {
+      // Password is required only for local authentication
+      return this.provider === 'local' || !this.provider;
+    },
     minlength: 6,
     select: false,
   },
@@ -25,6 +28,28 @@ const userSchema = new mongoose.Schema({
     required: true,
     enum: ["explorer", "expert", "innovator", "investor"],
     default: "explorer",
+  },
+
+  // OAuth fields
+  provider: {
+    type: String,
+    enum: ['local', 'google', 'github'],
+    default: 'local',
+  },
+  googleId: {
+    type: String,
+    sparse: true, // Allows null values but enforces uniqueness when present
+  },
+  githubId: {
+    type: String,
+    sparse: true,
+  },
+
+  // Admin role
+  role: {
+    type: String,
+    enum: ['user', 'admin', 'superadmin'],
+    default: 'user',
   },
 
   // New fields for Phase 2
@@ -41,13 +66,22 @@ const userSchema = new mongoose.Schema({
   },
   passwordResetToken: String,
   passwordResetExpires: Date,
+
+  // Email verification fields
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationToken: String,
+  emailVerificationExpires: Date,
 }, {
   timestamps: true, // Adds createdAt and updatedAt
 });
 
-// Hash password before saving
+// Hash password before saving (only for local auth)
 userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) return next();
+  // Skip hashing if password not modified or using OAuth
+  if (!this.isModified("password") || !this.password) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
@@ -75,6 +109,24 @@ userSchema.methods.createPasswordResetToken = function() {
   return resetToken;
 };
 
+// Method to generate email verification token
+userSchema.methods.createEmailVerificationToken = function() {
+  // Generate random token
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+
+  // Hash token and save to database
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(verificationToken)
+    .digest('hex');
+
+  // Set expiration time (24 hours)
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+
+  // Return unhashed token (to send via email)
+  return verificationToken;
+};
+
 // Indexes for better query performance
 userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });
@@ -82,6 +134,13 @@ userSchema.index({ registerAs: 1 });
 userSchema.index({ isActive: 1 });
 userSchema.index({ passwordResetToken: 1 });
 userSchema.index({ passwordResetExpires: 1 });
+userSchema.index({ emailVerificationToken: 1 });
+userSchema.index({ emailVerificationExpires: 1 });
+userSchema.index({ emailVerified: 1 });
+userSchema.index({ provider: 1 });
+userSchema.index({ googleId: 1 }, { sparse: true });
+userSchema.index({ githubId: 1 }, { sparse: true });
+userSchema.index({ role: 1 });
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;
