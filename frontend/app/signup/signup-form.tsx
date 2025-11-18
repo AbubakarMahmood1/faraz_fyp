@@ -21,7 +21,7 @@ export default function SignupForm() {
   const [registerAs, setRegisterAs] = useState(USER_ROLES[0]);
 
   const dispatcher = useDispatch();
-  const { handleSignup } = useAuth();
+  const { handleSignup, setSession } = useAuth();
   const router = useRouter();
   async function submit(data: Signup) {
     const { email, password, username } = data;
@@ -51,6 +51,12 @@ export default function SignupForm() {
     } else if (responseStatus === 201) {
       setDuplicateEmail(false);
       setDuplicateUsername(false);
+
+      // Save token to localStorage
+      if (response.data?.token) {
+        setSession(response.data.token);
+      }
+
       dispatcher(userActions.setUser(data?.username));
       if (registerAs.value === "innovator") {
         router.push("/registeration/innovator");
