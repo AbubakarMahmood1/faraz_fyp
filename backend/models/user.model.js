@@ -41,6 +41,14 @@ const userSchema = new mongoose.Schema({
   },
   passwordResetToken: String,
   passwordResetExpires: Date,
+
+  // Email verification fields
+  emailVerified: {
+    type: Boolean,
+    default: false,
+  },
+  emailVerificationToken: String,
+  emailVerificationExpires: Date,
 }, {
   timestamps: true, // Adds createdAt and updatedAt
 });
@@ -75,6 +83,24 @@ userSchema.methods.createPasswordResetToken = function() {
   return resetToken;
 };
 
+// Method to generate email verification token
+userSchema.methods.createEmailVerificationToken = function() {
+  // Generate random token
+  const verificationToken = crypto.randomBytes(32).toString('hex');
+
+  // Hash token and save to database
+  this.emailVerificationToken = crypto
+    .createHash('sha256')
+    .update(verificationToken)
+    .digest('hex');
+
+  // Set expiration time (24 hours)
+  this.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+
+  // Return unhashed token (to send via email)
+  return verificationToken;
+};
+
 // Indexes for better query performance
 userSchema.index({ email: 1 });
 userSchema.index({ username: 1 });
@@ -82,6 +108,9 @@ userSchema.index({ registerAs: 1 });
 userSchema.index({ isActive: 1 });
 userSchema.index({ passwordResetToken: 1 });
 userSchema.index({ passwordResetExpires: 1 });
+userSchema.index({ emailVerificationToken: 1 });
+userSchema.index({ emailVerificationExpires: 1 });
+userSchema.index({ emailVerified: 1 });
 
 const User = mongoose.model("User", userSchema);
 module.exports = User;

@@ -2,7 +2,7 @@ const jwtDecode = require("jwt-decode");
 const jwt = require("jsonwebtoken");
 const crypto = require("crypto");
 const User = require("../models/user.model");
-const { sendPasswordResetEmail, sendWelcomeEmail } = require("../utils/email");
+const { sendPasswordResetEmail, sendWelcomeEmail, sendVerificationEmail } = require("../utils/email");
 const errorMessages = require("../utils/errorMessages");
 function getToken(id, registerAs = "") {
   return jwt.sign({ id, registerAs }, process.env.JWT_SECRET, {
@@ -44,6 +44,27 @@ exports.signup = async (req, res) => {
       password: req.body.password,
       registerAs: req.body.registerAs,
     });
+
+    // Generate email verification token
+    const verificationToken = newUser.createEmailVerificationToken();
+    await newUser.save({ validateBeforeSave: false });
+
+    // Send verification email
+    const verificationURL = `${process.env.FRONTEND_URL}/verify-email/${verificationToken}`;
+
+    try {
+      await sendVerificationEmail(
+        newUser.email,
+        newUser.username,
+        verificationToken,
+        verificationURL
+      );
+      console.log('Verification email sent to:', newUser.email);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Don't fail signup if email fails - user can request resend
+    }
+
     const token = getToken(newUser._id);
     res.status(201).json({
       status: "success",

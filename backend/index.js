@@ -13,6 +13,7 @@ const { authLimiter, apiLimiter } = require("./middleware/rateLimiter.middleware
 const { globalErrorHandler, notFoundHandler } = require("./middleware/error.middleware");
 const profileRoutes = require("./routes/profile.routes");
 const userRoutes = require("./routes/user.routes");
+const verificationRoutes = require("./routes/verification.routes");
 const searchRoutes = require("./routes/search.routes");
 const connectionRoutes = require("./routes/connection.routes");
 const activityRoutes = require("./routes/activity.routes");
@@ -74,6 +75,9 @@ app.get("/api/get-hello", authControllers.hello);
 // Auth routes (protected)
 app.post("/api/logout", protect, authControllers.logout);
 app.patch("/api/users/update-password", protect, authControllers.updatePassword);
+
+// Email verification routes
+app.use("/api/auth", verificationRoutes);
 
 // Resource routes with general API rate limiting
 app.use("/api/profile", apiLimiter, profileRoutes);
